@@ -1,4 +1,4 @@
-import { Observable, of } from 'rxjs';
+import { delay, Observable, of } from 'rxjs';
 import { FactInterface } from '../models/fact.model';
 import { FactService } from './fact.service';
 
@@ -48,6 +48,6 @@ export class FactMockService extends FactService {
 
   override getRandomFact(): Observable<FactInterface> {
     const fact = this.facts[Math.floor(Math.random() * this.facts.length)];
-    return of(fact);
+    return of(fact).pipe(delay(1000));
   }
 }
