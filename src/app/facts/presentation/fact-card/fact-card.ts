@@ -19,7 +19,18 @@ import { GetRandomFactUseCase } from '../../application/get-random-fact.use-case
           <span class="text-xs font-semibold uppercase tracking-widest text-indigo-400">Useless fact</span>
         </div>
 
-        @if (fact.value(); as data) {
+        @if (fact.error()) {
+          <div
+            class="flex-1 rounded-2xl border border-red-100 bg-red-50 p-5 text-red-900"
+            role="alert"
+            aria-live="assertive"
+          >
+            <p class="text-sm font-semibold">Unable to load a fact.</p>
+            <p class="mt-2 text-sm leading-relaxed text-red-700">
+              The fact service did not respond. Try again in a moment.
+            </p>
+          </div>
+        } @else if (fact.value(); as data) {
           <div class="flex-1">
             <p class="text-gray-800 text-xl font-medium leading-relaxed">{{ data.text }}</p>
           </div>
@@ -71,6 +82,8 @@ import { GetRandomFactUseCase } from '../../application/get-random-fact.use-case
                 ></path>
               </svg>
               <span>Loading fact...</span>
+            } @else if (fact.error()) {
+              <span>Try again</span>
             } @else {
               <span>New fact</span>
             }
