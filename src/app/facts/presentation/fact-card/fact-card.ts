@@ -13,7 +13,7 @@ import { GetRandomFactUseCase } from '../../application/get-random-fact.use-case
       <div class="absolute -top-6 -left-6 w-32 h-32 bg-indigo-100 rounded-full opacity-60"></div>
       <div class="absolute -bottom-8 -right-8 w-48 h-48 bg-violet-100 rounded-full opacity-50"></div>
 
-      <div class="relative space-y-6 min-h-[21rem]">
+      <div class="relative space-y-6 min-h-84">
         <div class="flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
           <span class="text-xs font-semibold uppercase tracking-widest text-indigo-400">Useless fact</span>

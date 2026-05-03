@@ -50,6 +50,30 @@ HTTP API.
 - `src/app/facts/infrastructure`: concrete adapters for mock data and the HTTP API.
 - `src/app/facts/presentation`: Angular component that renders and reloads facts.
 
+## Dependency Rules
+
+```mermaid
+flowchart LR
+  AppConfig["app.config.ts<br/>composition root"]
+  Presentation["presentation<br/>FactCard"]
+  Application["application<br/>GetRandomFactUseCase"]
+  Domain["domain<br/>Fact + FactRepository"]
+  Infrastructure["infrastructure<br/>MockFactRepository<br/>HttpFactRepository"]
+  ExternalApi["external API<br/>uselessfacts.jsph.pl"]
+
+  Presentation --> Application
+  Application --> Domain
+  Infrastructure --> Domain
+  Infrastructure --> ExternalApi
+  AppConfig -. wires .-> Application
+  AppConfig -. binds port to adapter .-> Domain
+  AppConfig -. selects adapter .-> Infrastructure
+```
+
+The dependency direction points inward. `domain` does not import Angular, HTTP, environment config,
+or UI code. `application` depends only on the domain port. `infrastructure` implements that port,
+and `app.config.ts` is the only place where concrete adapters are selected.
+
 ## Dependency Inversion
 
 `GetRandomFactUseCase` depends on the abstract `FactRepository` port:
