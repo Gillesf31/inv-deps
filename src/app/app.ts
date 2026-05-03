@@ -1,6 +1,5 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { FactCard } from './components/fact-card/fact-card';
+import { Component } from '@angular/core';
+import { FactCard } from './facts/presentation/fact-card/fact-card';
 
 @Component({
   selector: 'app-root',

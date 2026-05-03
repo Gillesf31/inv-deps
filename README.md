@@ -1,50 +1,88 @@
-## Dependency Inversion Principle
+# Clean Architecture and Dependency Inversion
 
-This project illustrates the **Dependency Inversion Principle (DIP)**, one of the SOLID principles:
+This Angular app demonstrates how the **Dependency Inversion Principle** fits inside a small
+**clean/hexagonal architecture**.
 
-> _High-level modules should not depend on low-level modules. Both should depend on abstractions._
+The UI asks for a random fact through an application use case. The use case depends on a domain
+port, and the app composition root decides whether that port is backed by mock data or by the real
+HTTP API.
 
-### How it works here
-
-`FactService` is an abstract class acting as the **abstraction layer**. Neither the consumer (`FactCard`) nor the implementations (`FactProductionService`, `FactMockService`) know about each other — they all point to the abstraction.
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         app.config.ts                           │
-│                      (Composition Root)                         │
-│                                                                 │
-│   provide: FactService  ──►  useClass: FactProductionService    │
-│                                        or FactMockService       │
-│                         driven by environment.mockServices      │
-└──────────────────────────────────┬──────────────────────────────┘
-                                   │
-          ┌────────────────────────┼───────────────────────┐
-          │                        │                       │
-          │  HIGH LEVEL            │ ABSTRACTION           │  LOW LEVEL
-          ▼                        ▼                       │
-┌──────────────────┐   ┌───────────────────────┐           │
-│    FactCard      │   │  «abstract»           │           │
-│   (Component)    │   │  FactService          │           │
-│                  │   │                       │           │
-│  inject(         │   │  getRandomFact():     │           │
-│    FactService   ├──►│    Observable         │◄──────────┤
-│  )               │   │                       │  extends  │
-│                  │   └───────────────────────┘           │
-│  getRandomFact() │                                       │
-└──────────────────┘          ┌────────────────────────────┴──────┐
-                              │                                   │
-                   ┌──────────┴──────────┐           ┌────────────┴────────┐
-                   │ FactProductionSvc   │           │   FactMockSvc       │
-                   │                     │           │                     │
-                   │ getRandomFact()     │           │ getRandomFact()     │
-                   │   → HTTP API call   │           │   → local data      │
-                   └─────────────────────┘           └─────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│ app.config.ts                                                        │
+│ Composition root                                                     │
+│                                                                      │
+│ provide: FactRepository                                              │
+│ useClass: MockFactRepository or HttpFactRepository                   │
+└───────────────────────────────────────┬──────────────────────────────┘
+                                        │
+┌───────────────────────────────────────┼──────────────────────────────┐
+│ Presentation                          │ Application                  │
+│                                       │                              │
+│ FactCard ───────────────────────────► GetRandomFactUseCase           │
+│                                       │                              │
+└───────────────────────────────────────┼──────────────────────────────┘
+                                        │
+                                        ▼
+                              ┌────────────────────┐
+                              │ Domain             │
+                              │                    │
+                              │ FactRepository     │
+                              │ Fact               │
+                              └─────────┬──────────┘
+                                        │
+             ┌──────────────────────────┴──────────────────────────┐
+             ▼                                                     ▼
+┌──────────────────────────┐                          ┌──────────────────────────┐
+│ Infrastructure adapter   │                          │ Infrastructure adapter   │
+│                          │                          │                          │
+│ MockFactRepository       │                          │ HttpFactRepository       │
+│ local facts + delay      │                          │ HTTP API + DTO mapping   │
+└──────────────────────────┘                          └──────────────────────────┘
 ```
 
-### Key points
+## Layers
 
-- **`FactCard`** (high-level) only knows about `FactService` — it never imports a concrete implementation.
-- **`FactProductionService`** and **`FactMockService`** (low-level) both `extend` `FactService`, so they also depend on the abstraction, not on each other.
-- **`app.config.ts`** is the sole composition root — the only place that decides which implementation to inject, based on `environment.mockServices`.
+- `src/app/facts/domain`: domain model and outbound repository port.
+- `src/app/facts/application`: application use case that coordinates the domain port.
+- `src/app/facts/infrastructure`: concrete adapters for mock data and the HTTP API.
+- `src/app/facts/presentation`: Angular component that renders and reloads facts.
 
-This means swapping the data source (e.g. replacing the HTTP API with a different backend) requires no changes in `FactCard` — only a new implementation of `FactService` and a one-line change in `app.config.ts`.
+## Dependency Inversion
+
+`GetRandomFactUseCase` depends on the abstract `FactRepository` port:
+
+```ts
+export abstract class FactRepository {
+  abstract getRandomFact(): Observable<Fact>;
+}
+```
+
+The UI depends on `GetRandomFactUseCase`, not on a concrete data source. The concrete adapter is
+selected only in `app.config.ts`:
+
+```ts
+{
+  provide: FactRepository,
+  useClass: environment.mockServices ? MockFactRepository : HttpFactRepository,
+}
+```
+
+This keeps business-facing code independent from infrastructure details. Replacing the HTTP API,
+adding local storage, or changing mock behavior requires a new adapter and a provider change, not a
+presentation or use-case rewrite.
+
+## API Boundary
+
+The domain model uses camelCase names such as `sourceUrl`. The HTTP adapter owns the external DTO
+shape and maps the API field `source_url` into the domain model before data reaches the application
+or presentation layers.
+
+## Commands
+
+```bash
+npm run build
+npm test -- --watch=false
+```

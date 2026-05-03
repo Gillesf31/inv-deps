@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { FactService } from '../../services/fact.service';
+import { GetRandomFactUseCase } from '../../application/get-random-fact.use-case';
 
 @Component({
   selector: 'app-fact-card',
@@ -26,7 +26,7 @@ import { FactService } from '../../services/fact.service';
 
           <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
             <a
-              [href]="data.source_url"
+              [href]="data.sourceUrl"
               target="_blank"
               rel="noopener noreferrer"
               class="text-xs text-gray-400 hover:text-indigo-500 transition-colors"
@@ -81,9 +81,9 @@ import { FactService } from '../../services/fact.service';
   `,
 })
 export class FactCard {
-  private readonly factService = inject(FactService);
+  private readonly getRandomFact = inject(GetRandomFactUseCase);
 
   protected readonly fact = rxResource({
-    stream: () => this.factService.getRandomFact(),
+    stream: () => this.getRandomFact.execute(),
   });
 }
